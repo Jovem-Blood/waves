@@ -1,4 +1,4 @@
-import { createAudioPlayer, createAudioResource, joinVoiceChannel } from '@discordjs/voice';
+import { AudioPlayerStatus, createAudioPlayer, createAudioResource, joinVoiceChannel } from '@discordjs/voice';
 import { Command } from '@sapphire/framework';
 import { ApplicationCommandType } from 'discord.js';
 import ytdl from 'ytdl-core';
@@ -44,6 +44,9 @@ export class PlayCommand extends Command {
     interaction.channel?.send(url)
     const sub = connection.subscribe(player)
     player.play(resource)
+    player.on(AudioPlayerStatus.Idle, () => {
+      connection.destroy()
+    })
     return interaction.reply("Vamo começar essa festa!")
 
   }
