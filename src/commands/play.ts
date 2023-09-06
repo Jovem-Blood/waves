@@ -2,6 +2,7 @@ import { AudioPlayerStatus, createAudioPlayer, createAudioResource, joinVoiceCha
 import { Command } from '@sapphire/framework';
 import { ApplicationCommandType } from 'discord.js';
 import ytdl from 'ytdl-core';
+import { playing } from '../utils/collections';
 
 export class PlayCommand extends Command {
   public constructor(context: Command.Context, options: Command.Options) {
@@ -47,7 +48,9 @@ export class PlayCommand extends Command {
     player.on(AudioPlayerStatus.Idle, () => {
       connection.destroy()
     })
+    playing.set(guildId, player)
     return interaction.reply("Vamo começar essa festa!")
+
 
   }
 }
