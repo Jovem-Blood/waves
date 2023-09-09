@@ -31,13 +31,16 @@ export class PlayCommand extends Command {
     if (!channel) {
       return interaction.reply("tu precisa estar em um canal de voz, tio")
     }
-
+    
+    if (!ytdl.validateURL(url)){
+      interaction.reply("Não reconheço essa URL")
+    }
+    
     const connection = joinVoiceChannel({
       channelId: channel.id,
       guildId: guildId,
       adapterCreator: guild.voiceAdapterCreator
     })
-
 
     const resource = createAudioResource(ytdl(url, { filter: 'audioonly' }))
     const player = createAudioPlayer()
