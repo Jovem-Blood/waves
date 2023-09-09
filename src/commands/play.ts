@@ -2,7 +2,7 @@ import { AudioPlayerStatus, createAudioPlayer, createAudioResource, joinVoiceCha
 import { Command } from '@sapphire/framework';
 import { ApplicationCommandType } from 'discord.js';
 import ytdl from 'ytdl-core';
-import { playing } from '../utils/collections';
+import { paused, playing, queue } from '../utils/collections';
 
 export class PlayCommand extends Command {
   public constructor(context: Command.Context, options: Command.Options) {
@@ -33,9 +33,16 @@ export class PlayCommand extends Command {
     }
     
     if (!ytdl.validateURL(url)){
-      interaction.reply("Não reconheço essa URL")
+      return interaction.reply("Não reconheço essa URL")
     }
-    
+
+    if (playing.get(guildId) || paused.get(guildId)){
+      let musics = queue.get(guildId)
+      musics?.push(url)
+      queue.set(guildId,musics!)
+      return interaction.reply("Adicionando música a lista")
+    }
+
     const connection = joinVoiceChannel({
       channelId: channel.id,
       guildId: guildId,
@@ -48,8 +55,17 @@ export class PlayCommand extends Command {
     interaction.channel?.send(url)
     const sub = connection.subscribe(player)
     player.play(resource)
-    player.on(AudioPlayerStatus.Idle, () => {
-      connection.destroy()
+    player.on(AudioPlayerStatus.Idle, async () => {
+      if (!queue.get(guildId)){
+        connection.destroy()
+      } else {
+        const nextUrl = queue.get(guildId)!.shift()!.toString()
+        const nextResource = createAudioResource(ytdl(nextUrl, { filter: 'audioonly' }))
+        player.play(nextResource)
+        playing.set(guildId, player)
+        const title = await ytdl.getBasicInfo(nextUrl)
+        interaction.channel?.send(`Tocando agora **${title}**`)
+      }
     })
     playing.set(guildId, player)
     return interaction.reply("Vamo começar essa festa!")
