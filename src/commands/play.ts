@@ -31,15 +31,19 @@ export class PlayCommand extends Command {
     if (!channel) {
       return interaction.reply("tu precisa estar em um canal de voz, tio")
     }
-    
-    if (!ytdl.validateURL(url)){
+
+    if (!ytdl.validateURL(url)) {
       return interaction.reply("Não reconheço essa URL")
     }
 
-    if (playing.get(guildId) || paused.get(guildId)){
-      let musics = queue.get(guildId)
-      musics?.push(url)
-      queue.set(guildId,musics!)
+    if (playing.get(guildId) || paused.get(guildId)) {
+      if (queue.has(guildId)) {
+        let musics = queue.get(guildId)!
+        musics?.push(url)
+        queue.set(guildId, musics)
+      } else {
+        queue.set(guildId, [url])
+      }
       return interaction.reply("Adicionando música a lista")
     }
 
@@ -55,16 +59,18 @@ export class PlayCommand extends Command {
     interaction.channel?.send(url)
     const sub = connection.subscribe(player)
     player.play(resource)
-    player.on(AudioPlayerStatus.Idle, async () => {
-      if (!queue.get(guildId)){
+    player.on(AudioPlayerStatus.Idle, () => {
+      if (!queue.get(guildId) || queue.get(guildId)?.length === 0) {
+        interaction.channel?.send("bye")
         connection.destroy()
       } else {
         const nextUrl = queue.get(guildId)!.shift()!.toString()
         const nextResource = createAudioResource(ytdl(nextUrl, { filter: 'audioonly' }))
         player.play(nextResource)
         playing.set(guildId, player)
-        const title = await ytdl.getBasicInfo(nextUrl)
-        interaction.channel?.send(`Tocando agora **${title}**`)
+        ytdl.getBasicInfo(nextUrl).then(info => {
+          interaction.channel?.send(`Tocando agora **${info.videoDetails.title}**`)
+        })
       }
     })
     playing.set(guildId, player)
