@@ -14,8 +14,7 @@
     "@sapphire/framework": "^4.5.3",
     "discord.js": "^14.13.0",
     "libsodium-wrappers": "^0.7.11",
-    "ytdl-core": "^4.10.0",
-    "ytpl": "^2.3.0"
+    "play-dl": "^1.9.6"
   },
   "devDependencies": {
     "@types/node": "^20.5.7",
