@@ -1,7 +1,7 @@
 import { AudioPlayerStatus, createAudioPlayer, createAudioResource, joinVoiceChannel } from '@discordjs/voice';
 import { Command } from '@sapphire/framework';
 import { ApplicationCommandType } from 'discord.js';
-import ytdl from 'ytdl-core';
+import play from 'play-dl';
 import { paused, playing, queue } from '../utils/collections';
 
 export class PlayCommand extends Command {
@@ -32,10 +32,11 @@ export class PlayCommand extends Command {
       return interaction.reply("tu precisa estar em um canal de voz, tio")
     }
 
-    if (!ytdl.validateURL(url)) {
+    if (!play.yt_validate(url)) {
       return interaction.reply("Não reconheço essa URL")
     }
 
+    play.authorization()
     if (playing.get(guildId) || paused.get(guildId)) {
       if (queue.has(guildId)) {
         let musics = queue.get(guildId)!
@@ -53,29 +54,37 @@ export class PlayCommand extends Command {
       adapterCreator: guild.voiceAdapterCreator
     })
 
-    const resource = createAudioResource(ytdl(url, { filter: 'audioonly' }))
+    const source = await play.stream(url)
+
+    const resource = createAudioResource(source.stream, {
+      inputType: source.type
+    })
+
     const player = createAudioPlayer()
 
-    interaction.channel?.send(url)
     const sub = connection.subscribe(player)
     player.play(resource)
-    player.on(AudioPlayerStatus.Idle, () => {
+    player.on(AudioPlayerStatus.Idle, async () => {
       if (!queue.get(guildId) || queue.get(guildId)?.length === 0) {
         interaction.channel?.send("bye")
         connection.destroy()
+        queue.delete(guildId)
+        playing.delete(guildId)
+        paused.delete(guildId)
       } else {
         const nextUrl = queue.get(guildId)!.shift()!.toString()
-        const nextResource = createAudioResource(ytdl(nextUrl, { filter: 'audioonly' }))
+        const nextSource = await play.stream(nextUrl)
+        const nextResource = createAudioResource(nextSource.stream, {
+          inputType: source.type
+        })
         player.play(nextResource)
         playing.set(guildId, player)
-        ytdl.getBasicInfo(nextUrl).then(info => {
-          interaction.channel?.send(`Tocando agora **${info.videoDetails.title}**`)
+        play.video_info(nextUrl).then(info => {
+          interaction.channel?.send(`Tocando agora **${info.video_details.title}**`)
         })
       }
     })
     playing.set(guildId, player)
     return interaction.reply("Vamo começar essa festa!")
-
-
   }
 }
