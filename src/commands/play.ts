@@ -2,7 +2,7 @@ import { AudioPlayerStatus, createAudioPlayer, createAudioResource, joinVoiceCha
 import { Command } from '@sapphire/framework';
 import { ApplicationCommandType } from 'discord.js';
 import play from 'play-dl';
-import { paused, playing, queue } from '../utils/collections';
+import { paused, playing, counter, queue } from '../utils/collections';
 
 export class PlayCommand extends Command {
   public constructor(context: Command.Context, options: Command.Options) {
@@ -56,30 +56,34 @@ export class PlayCommand extends Command {
     })
 
     const player = createAudioPlayer()
+    playing.set(guildId, player)
+    queue.set(guildId, [url])
+    counter.set(guildId, 0)
+    interaction.reply("Vamo começar essa festa!")
 
     const sub = connection.subscribe(player)
     player.play(resource)
     player.on(AudioPlayerStatus.Idle, async () => {
-      if (!queue.get(guildId) || queue.get(guildId)?.length === 0) {
+      let position = counter.get(guildId)! + 1
+      const nextSong = queue.get(guildId)![position]
+      if (!nextSong) {
         interaction.channel?.send("bye")
         connection.destroy()
         queue.delete(guildId)
         playing.delete(guildId)
         paused.delete(guildId)
       } else {
-        const nextUrl = queue.get(guildId)!.shift()!.toString()
-        const nextSource = await play.stream(nextUrl)
+        const nextSource = await play.stream(nextSong)
         const nextResource = createAudioResource(nextSource.stream, {
           inputType: source.type
         })
         player.play(nextResource)
         playing.set(guildId, player)
-        play.video_info(nextUrl).then(info => {
+        play.video_info(nextSong).then(info => {
           interaction.channel?.send(`Tocando agora **${info.video_details.title}**`)
         })
+        counter.set(guildId, position)
       }
     })
-    playing.set(guildId, player)
-    return interaction.reply("Vamo começar essa festa!")
   }
 }
