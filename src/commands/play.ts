@@ -32,10 +32,6 @@ export class PlayCommand extends Command {
       return interaction.reply("tu precisa estar em um canal de voz, tio")
     }
 
-    if (!ytdl.validateURL(url)) {
-      return interaction.reply("Não reconheço essa URL")
-    }
-
     if (playing.get(guildId) || paused.get(guildId)) {
       if (queue.has(guildId)) {
         let musics = queue.get(guildId)!
