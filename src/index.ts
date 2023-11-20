@@ -1,7 +1,6 @@
 import { SapphireClient } from '@sapphire/framework';
 import { GatewayIntentBits } from 'discord.js';
-import { token } from './config.json';
-
+import 'dotenv/config'
 
 const client = new SapphireClient({
   intents: [
@@ -13,4 +12,4 @@ const client = new SapphireClient({
   loadMessageCommandListeners: true
 });
 
-client.login(token);
+client.login(process.env.TOKEN);
