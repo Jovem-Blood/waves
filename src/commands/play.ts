@@ -20,11 +20,19 @@ export class PlayCommand extends Command {
           .setType(ApplicationCommandType.Message)
       );
   }
-
   public async chatInputRun(interaction: Command.ChatInputCommandInteraction) {
     const guildId = interaction.guildId!;
     const guild = interaction.guild;
-    const url = interaction.options.get('url')?.value?.toString() || '';
+
+    let url = interaction.options.get('url')?.value?.toString() || '';
+
+    const validation = await play.validate(url)
+    if (!validation) {
+      return interaction.reply("Não conheço essa daí não tio")
+    } else if (validation == 'search') {
+      const results = await play.search(url)
+      url = results[0].url
+    }
 
     const channel = guild?.members.cache.get(interaction.user.id)?.voice.channel;
 
@@ -59,10 +67,11 @@ export class PlayCommand extends Command {
     playing.set(guildId, player)
     queue.set(guildId, [url])
     counter.set(guildId, 0)
-    interaction.reply("Vamo começar essa festa!")
 
-    const sub = connection.subscribe(player)
+
+    connection.subscribe(player)
     player.play(resource)
+		interaction.reply(`Vamos nessa`)
     player.on(AudioPlayerStatus.Idle, async () => {
       let position = counter.get(guildId)! + 1
       const nextSong = queue.get(guildId)![position]
