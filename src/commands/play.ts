@@ -87,9 +87,9 @@ export class PlayCommand extends Command {
 				})
 				player.play(nextResource)
 				playing.set(guildId, player)
-				play.video_info(nextSong).then(info => {
-					interaction.channel?.send(`Tocando agora **${info.video_details.title}**`)
-				})
+				// play.video_info(nextSong).then(info => {
+				// 	interaction.channel?.send(`Tocando agora **${info.video_details.title}**`)
+				// })
 				counter.set(guildId, position)
 			}
 		})
